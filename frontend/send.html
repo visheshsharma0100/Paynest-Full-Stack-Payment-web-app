@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayNest — Send Money</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--accent:#7c6dfa;--accent2:#fa6d9e;--text:#f0f0f5;--muted:#6b6b80;--input-bg:#1a1a26;--success:#4ade80;--error:#f87171}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    .blob{position:fixed;border-radius:50%;filter:blur(100px);opacity:0.1;pointer-events:none}
+    .blob-1{width:400px;height:400px;background:var(--accent);top:0;left:50%;transform:translateX(-50%)}
+
+    nav{position:sticky;top:0;z-index:100;background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;gap:14px}
+    .back-btn{background:transparent;border:1px solid var(--border);color:var(--muted);width:36px;height:36px;border-radius:9px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+    .nav-logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800}
+    .nav-logo span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+    main{flex:1;display:flex;align-items:center;justify-content:center;padding:20px}
+    .container{width:100%;max-width:420px}
+
+    .recipient{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px;text-align:center;margin-bottom:20px}
+    .recipient-avatar{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Syne';font-weight:800;font-size:28px;margin:0 auto 14px}
+    .recipient-name{font-family:'Syne';font-size:20px;font-weight:700}
+    .recipient-label{color:var(--muted);font-size:13px;margin-top:4px}
+
+    .amount-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px}
+    .amount-label{font-size:12px;color:var(--muted);margin-bottom:14px}
+    .amount-input-wrap{position:relative;margin-bottom:20px}
+    .rupee-sign{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:22px;color:var(--accent)}
+    #amountInput{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:16px 16px 16px 46px;color:var(--text);font-size:28px;font-weight:700}
+
+    .quick-amounts{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+    .quick-btn{background:var(--input-bg);border:1px solid var(--border);color:var(--muted);padding:8px 14px;border-radius:8px;cursor:pointer}
+
+    .btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:white;font-size:16px;font-weight:700;cursor:pointer}
+
+    .toast{padding:12px 16px;border-radius:10px;font-size:13px;margin-top:14px;display:none}
+    .toast.error{color:var(--error)}
+    .toast.success{color:var(--success)}
+
+    .success-overlay{position:fixed;inset:0;background:var(--bg);display:none;align-items:center;justify-content:center;flex-direction:column;z-index:200}
+    .success-overlay.show{display:flex}
+  </style>
+</head>
+<body>
+
+<nav>
+  <!-- FIXED -->
+  <button class="back-btn" onclick="window.location.href='/dashboard'">←</button>
+  <div class="nav-logo">Pay<span>Nest</span></div>
+</nav>
+
+<main>
+  <div class="container">
+    <div class="recipient">
+      <div class="recipient-avatar" id="recipientAvatar">?</div>
+      <div class="recipient-name" id="recipientName">Loading...</div>
+      <div class="recipient-label">Send money to</div>
+    </div>
+
+    <div class="amount-card">
+      <div class="amount-label">Enter Amount</div>
+      <div class="amount-input-wrap">
+        <span class="rupee-sign">₹</span>
+        <input type="number" id="amountInput" placeholder="0" min="1"/>
+      </div>
+
+      <div class="quick-amounts">
+        <button class="quick-btn" onclick="setAmount(100)">₹100</button>
+        <button class="quick-btn" onclick="setAmount(500)">₹500</button>
+      </div>
+
+      <button class="btn" id="sendBtn" onclick="handleSend()">Send Money</button>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+</main>
+
+<div class="success-overlay" id="successOverlay">
+  <div>🎉</div>
+  <div>Money Sent!</div>
+  <div id="successMsg"></div>
+  <button onclick="window.location.href='/dashboard'">Back</button>
+</div>
+
+<script>
+  const token = localStorage.getItem('token');
+
+  // FIXED
+  if (!token) window.location.href = '/user/signin';
+
+  const sendTo = localStorage.getItem('sendTo');
+  const sendToName = localStorage.getItem('sendToName');
+
+  // FIXED
+  if (!sendTo) window.location.href = '/dashboard';
+
+  document.getElementById('recipientName').textContent = sendToName || 'Unknown';
+  document.getElementById('recipientAvatar').textContent = (sendToName || '?')[0].toUpperCase();
+
+  function setAmount(val) {
+    document.getElementById('amountInput').value = val;
+  }
+
+  async function handleSend() {
+    const amount = parseInt(document.getElementById('amountInput').value);
+
+    if (!amount || amount <= 0) {
+      showToast('Enter valid amount', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/account/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', token },
+        body: JSON.stringify({ receiver: sendTo, amount })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById('successMsg').textContent = `₹${amount} sent`;
+        document.getElementById('successOverlay').classList.add('show');
+      } else {
+        showToast(data.message, 'error');
+      }
+    } catch {
+      showToast('Server error', 'error');
+    }
+  }
+
+  function showToast(msg, type) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+  }
+</script>
+
+</body>
+</html>

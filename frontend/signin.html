@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PayNest — Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0a0f; --card: #12121a; --border: #1e1e2e;
+      --accent: #7c6dfa; --accent2: #fa6d9e; --text: #f0f0f5;
+      --muted: #6b6b80; --input-bg: #1a1a26;
+      --success: #4ade80; --error: #f87171;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .blob { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.15; animation: drift 8s ease-in-out infinite; pointer-events: none; }
+    .blob-1 { width: 400px; height: 400px; background: var(--accent2); top: -100px; right: -100px; }
+    .blob-2 { width: 300px; height: 300px; background: var(--accent); bottom: -80px; left: -80px; }
+    @keyframes drift { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,-20px)} }
+
+    .container { width: 100%; max-width: 420px; padding: 20px; }
+    .logo { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; text-align: center; margin-bottom: 32px; }
+    .logo span { background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 36px 32px; }
+    .card-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .card-sub { color: var(--muted); margin-bottom: 28px; }
+
+    .field { margin-bottom: 16px; }
+    label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display:block; }
+    input { width: 100%; padding: 12px; border-radius: 10px; border:1px solid var(--border); background: var(--input-bg); color: white; }
+
+    .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border:none; border-radius:12px; color:white; font-weight:700; cursor:pointer; }
+
+    .toast { margin-top: 10px; display:none; }
+    .signup-link { text-align:center; margin-top:20px; }
+    .signup-link a { color: var(--accent); text-decoration:none; }
+  </style>
+</head>
+
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="container">
+  <div class="logo">Pay<span>Nest</span></div>
+
+  <div class="card">
+    <div class="card-title">Welcome back</div>
+    <div class="card-sub">Sign in to your account</div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="username"/>
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="password"/>
+    </div>
+
+    <button class="btn" onclick="handleSignin()">Sign In</button>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <!-- FIXED -->
+  <div class="signup-link">
+    Don't have an account? <a href="/user/signup">Sign up</a>
+  </div>
+</div>
+
+<script>
+async function handleSignin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+
+  if (!username || !password) {
+    alert("Fill all fields");
+    return;
+  }
+
+  try {
+    const res = await fetch('http://localhost:3000/user/signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem('token', data.token);
+      console.log(localStorage.getItem('token'));
+
+      // ✅ FIXED
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1000);
+
+    } else {
+      alert(data.message);
+    }
+
+  } catch {
+    alert("Server error");
+  }
+}
+</script>
+
+</body>
+</html>
